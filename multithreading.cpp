@@ -15,7 +15,8 @@ class ParallelGenerators {
 
 public:
     ParallelGenerators(size_t nthreads, size_t jump_ahead_step)
-        : generators_(nthreads, pcg32(SEED)),
+        : nthreads_(nthreads), 
+          generators_(nthreads, pcg32(SEED)),
           unif_(-1., 1.) {
         
         for (size_t i = 0; i < nthreads; ++i) {
@@ -51,21 +52,19 @@ double calculate_single_threaded(size_t n_iter) {
     return 4. * N/n_iter;
 }
 
-auto make_worker(size_t w_id, ParallelGenerators& gens) {
-    return [w_id, &gens] (size_t n_iter) {
-        size_t N = 0;
+auto worker(size_t w_id, ParallelGenerators& gens, size_t n_iter) {
+    size_t N = 0;
         
-        for (size_t j = 0; j < n_iter; ++j) {
-            double x = gens.get(w_id);
-            double y = gens.get(w_id);
+    for (size_t j = 0; j < n_iter; ++j) {
+        double x = gens.get(w_id);
+        double y = gens.get(w_id);
 
-            if (in_circle(x, y)) {
-                ++N;
-            }
+        if (in_circle(x, y)) {
+            ++N;
         }
+    }
 
-        return N;
-    };
+    return N;
 }
 
 double calculate_multi_threaded(size_t n_iter, size_t n_threads) {
@@ -81,7 +80,7 @@ double calculate_multi_threaded(size_t n_iter, size_t n_threads) {
     std::vector<std::future<size_t>> Ns;
 
     for (size_t i = 0; i < n_threads; ++i) {
-        Ns.push_back(std::async(make_worker(i, gens), n_iter_per_thread));
+        Ns.push_back(std::async(worker, i, std::ref(gens), n_iter_per_thread));
     }
 
     size_t N_total = 0;
