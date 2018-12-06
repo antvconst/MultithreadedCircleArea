@@ -3,6 +3,8 @@
 #include <iostream>
 #include <future>
 #include <algorithm>
+#include <iomanip>
+#include <chrono>
 
 const size_t SEED = 1337;
 
@@ -100,13 +102,19 @@ int main(int argc, char** argv) {
     size_t n_iter = atoll(argv[1]);
     size_t n_threads = atoll(argv[2]);
 
+    auto t1 = std::chrono::high_resolution_clock::now();
     double sthreaded = calculate_single_threaded(n_iter);
+    auto t2 = std::chrono::high_resolution_clock::now();
     double mthreaded = calculate_multi_threaded(n_iter, n_threads);
+    auto t3 = std::chrono::high_resolution_clock::now();
 
     std::cout << "Single thread: " << sthreaded << std::endl;
-    std::cout << "Multiple threads: " << mthreaded << std::endl;
+    std::cout << "Computed in " << std::chrono::duration<double, std::milli>(t2 - t1).count() << "ms\n" << std::endl;
 
-    std::cout << "Difference: " << sthreaded - mthreaded << std::endl;
+    std::cout << "Multiple threads: " << mthreaded << std::endl;
+    std::cout << "Computed in " << std::chrono::duration<double, std::milli>(t3 - t2).count() << "ms\n" << std::endl;
+
+    std::cout << std::scientific << "--> Difference: " << sthreaded - mthreaded << std::endl;
     
     return 0;
 }
